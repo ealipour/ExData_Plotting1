@@ -1,0 +1,68 @@
+---
+title: "Electric Power Consumption Data Analysis"
+output: html_document
+keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.path = "./figures/")
+```
+
+## Loading the data 
+
+We use the downloaded/unzipped file and read it to a dataframe. 
+
+```{r load_data,, message=FALSE, warning=FALSE, cache=TRUE}
+library(dplyr); library(RSQLite); library(sqldf)
+
+df <-read.csv2.sql("household_power_consumption.txt",sep=";", sql = "select * from file limit 10000 offset 60000  ")
+##Note that original format is d/m/y (Y is 4 digit year, vs y a 2 digit year) where (Date= '01/02/2007')'01/02/2007')
+df <- as.data.frame(df)
+
+df <- mutate(df,Date=as.Date(Date,"%d/%m/%Y"))
+df2<- df[df$Date %in% c(as.Date("2007-02-02"),as.Date("2007-02-01")),]
+
+df2 <- mutate(df2,DateTime=as.POSIXct(paste(Date, Time), format="%Y-%m-%d %H:%M"))
+
+summary(df2)
+nrow(df2)
+```
+```{r include=F}
+## to change ? to NAs: df2 [df2 == "?"] <- NA
+```
+
+To draw the active global power histogram, 
+```{r global_power_histo}
+hist(df2$Global_active_power, xlab = "Global Active Power (kilowats)", col="red",main="Global Active Power")
+```
+
+The time-series graph
+```{r timeseries}
+plot(df2$DateTime,df2$Global_active_power,type="l",lwd=2, ylab = "Global Active Power (kilowatts)", xlab ="")
+```
+
+The overlayed energy submetering plot
+```{r submetering}
+plot(df2$DateTime, df2$Sub_metering_1, type="l", col="black", xlab="Date", ylab ="Energy sub metering")
+lines(df2$DateTime, df2$Sub_metering_2, type="l", col="red")
+lines(df2$DateTime, df2$Sub_metering_3, type="l", col="blue")
+legend("topright", legend=c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"), col = c("black","red","blue"), lty=1, cex=0.8)
+```
+and the multiplot code
+```{r multiplot}
+par(mfcol=c(2,2), mar=c(1.5,6,1.5,2), oma=c(3,3,3,2))
+##another option is layout
+with(df2,{
+     plot(df2$DateTime,df2$Global_active_power,type="l",lwd=2, ylab = "Global Active Power (kilowatts)", xlab ="", cex=0.5, cex.lab=0.7)
+     
+     plot(df2$DateTime, df2$Sub_metering_1, type="l", col="black", xlab="Date", ylab ="Energy sub metering")
+lines(df2$DateTime, df2$Sub_metering_2, type="l", col="red")
+lines(df2$DateTime, df2$Sub_metering_3, type="l", col="blue")
+legend("topright", legend=c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"), col = c("black","red","blue"), lty=1, cex=0.7)
+})
+
+     plot(df2$DateTime,df2$Voltage, type="l", xlab="datetime", ylab ="Voltage")
+     
+     plot(df2$DateTime, df2$Global_reactive_power, type="l", xlab="datetime", ylab ="Voltage")
+```
