@@ -1,0 +1,7 @@
+base
+dplyr
+RSQLite
+proto
+gsubfn
+sqldf
+bindrcpp
